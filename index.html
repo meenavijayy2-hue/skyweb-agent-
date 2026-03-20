@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sky Web DXB — Social AI Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange:#FF6B00;--orange-bright:#FF8C00;--orange-glow:rgba(255,107,0,0.18);
+    --orange-dim:rgba(255,107,0,0.08);--border:rgba(255,107,0,0.15);--black:#0A0A0A;
+    --surface:#111111;--surface2:#181818;--surface3:#222222;
+    --text:#F0EDE8;--text-muted:#888;--green:#00E676;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--black);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:15px;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,107,0,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,107,0,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .app{display:flex;height:100vh;position:relative;z-index:1;}
+
+  .sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+  .logo-area{padding:22px 20px 18px;border-bottom:1px solid var(--border);}
+  .brand{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:#fff;line-height:1;}
+  .brand span{color:var(--orange);}
+  .tagline{font-size:11px;color:var(--text-muted);letter-spacing:3px;text-transform:uppercase;margin-top:3px;font-family:'JetBrains Mono',monospace;}
+  .live-badge{display:inline-flex;align-items:center;gap:5px;background:var(--orange-dim);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:10px;color:var(--orange);font-family:'JetBrains Mono',monospace;margin-top:10px;letter-spacing:1px;}
+  .live-badge::before{content:'';width:6px;height:6px;background:var(--orange);border-radius:50%;animation:pulse 1.5s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.8)}}
+  nav{padding:14px 10px;flex:1;overflow-y:auto;}
+  .nav-label{font-size:10px;color:var(--text-muted);letter-spacing:3px;text-transform:uppercase;font-family:'JetBrains Mono',monospace;padding:0 8px;margin:14px 0 6px;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;color:var(--text-muted);font-weight:600;font-size:14px;letter-spacing:0.5px;transition:all 0.2s;position:relative;}
+  .nav-item:hover{background:var(--orange-dim);color:var(--text);}
+  .nav-item.active{background:var(--orange-dim);color:var(--orange);border:1px solid var(--border);}
+  .nav-item.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;background:var(--orange);border-radius:0 3px 3px 0;}
+  .nav-icon{font-size:17px;width:20px;text-align:center;}
+
+  .api-section{padding:14px;border-top:1px solid var(--border);}
+  .api-label{font-size:10px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:8px;display:block;}
+  .api-row{display:flex;gap:6px;}
+  .api-input{flex:1;background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px;outline:none;width:100%;}
+  .api-input:focus{border-color:var(--orange);}
+  .api-save{background:var(--orange);border:none;border-radius:6px;padding:7px 11px;color:#000;font-weight:700;cursor:pointer;font-size:12px;}
+  .api-status{margin-top:7px;font-family:'JetBrains Mono',monospace;font-size:10px;display:none;align-items:center;gap:5px;}
+  .api-status.ok{color:var(--green);display:flex;}
+  .api-status.ok::before{content:'';width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;}
+  .api-status.err{color:#ff4444;display:flex;}
+
+  .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 26px;border-bottom:1px solid var(--border);background:var(--surface);}
+  .page-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;color:#fff;}
+  .topbar-pills{display:flex;gap:8px;}
+  .pill{display:flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:1px;}
+  .pill-ig{background:rgba(220,39,67,0.1);border:1px solid rgba(220,39,67,0.25);color:#f09433;}
+  .pill-li{background:rgba(0,119,181,0.1);border:1px solid rgba(0,119,181,0.25);color:#2979FF;}
+
+  .content{flex:1;overflow-y:auto;padding:24px;display:none;}
+  .content.active{display:block;}
+  .content::-webkit-scrollbar{width:3px;}
+  .content::-webkit-scrollbar-thumb{background:var(--border);}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:18px;}
+  .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .card-title{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:#fff;}
+
+  .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative;overflow:hidden;}
+  .stat-card::after{content:'';position:absolute;top:0;right:0;width:50px;height:50px;background:var(--orange-glow);border-radius:0 12px 0 50px;}
+  .stat-val{font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--orange);line-height:1;}
+  .stat-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-top:3px;font-family:'JetBrains Mono',monospace;}
+  .stat-chg{font-size:11px;color:var(--green);margin-top:5px;font-weight:600;}
+
+  .sec-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;color:#fff;margin-bottom:18px;display:flex;align-items:center;gap:12px;}
+  .sec-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+  .form-group{margin-bottom:14px;}
+  .form-label{display:block;font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;font-family:'JetBrains Mono',monospace;margin-bottom:7px;}
+  .form-control{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 13px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s;}
+  .form-control:focus{border-color:var(--orange);}
+  textarea.form-control{resize:vertical;min-height:85px;}
+  select.form-control option{background:var(--surface2);}
+
+  .ptoggle-row{display:flex;gap:8px;}
+  .ptoggle{flex:1;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text-muted);cursor:pointer;text-align:center;font-weight:700;font-size:12px;letter-spacing:1px;transition:all 0.2s;}
+  .ptoggle.on-ig{background:rgba(220,39,67,0.1);border-color:#dc2743;color:#f09433;}
+  .ptoggle.on-li{background:rgba(0,119,181,0.1);border-color:#0077B5;color:#2979FF;}
+  .ptoggle.on-both{background:rgba(255,107,0,0.1);border-color:var(--orange);color:var(--orange);}
+
+  .btn{padding:10px 20px;border-radius:8px;border:none;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:7px;}
+  .btn-primary{background:var(--orange);color:#000;}
+  .btn-primary:hover{background:var(--orange-bright);transform:translateY(-1px);}
+  .btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text-muted);}
+  .btn-ghost:hover{border-color:var(--orange);color:var(--orange);}
+  .btn-sm{padding:6px 12px;font-size:11px;}
+
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+
+  .post-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;animation:fadeUp 0.35s ease;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .pbadge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:1px;margin-bottom:10px;}
+  .pbadge-ig{background:rgba(220,39,67,0.12);color:#f09433;border:1px solid rgba(240,148,51,0.25);}
+  .pbadge-li{background:rgba(0,119,181,0.12);color:#2979FF;border:1px solid rgba(41,121,255,0.25);}
+  .post-text{font-size:13px;line-height:1.7;color:var(--text);white-space:pre-wrap;}
+  .post-tags{font-size:11px;color:var(--orange);margin-top:7px;font-family:'JetBrains Mono',monospace;}
+  .post-cta{margin-top:7px;font-size:12px;color:var(--orange-bright);font-weight:700;}
+  .post-actions{display:flex;gap:7px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);flex-wrap:wrap;}
+
+  .sched-item{display:flex;gap:12px;padding:13px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:9px;animation:fadeUp 0.3s ease;align-items:flex-start;}
+  .sched-time{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--orange);min-width:90px;padding-top:2px;}
+  .sched-body{flex:1;}
+  .sched-text{font-size:13px;color:var(--text);line-height:1.5;}
+  .sched-meta{display:flex;gap:7px;margin-top:7px;align-items:center;flex-wrap:wrap;}
+  .status-badge{padding:2px 7px;border-radius:10px;font-size:9px;font-weight:700;letter-spacing:1px;font-family:'JetBrains Mono',monospace;}
+  .s-sched{background:rgba(255,107,0,0.12);color:var(--orange);border:1px solid var(--border);}
+
+  .port-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .port-item{background:var(--surface2);border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:all 0.2s;animation:fadeUp 0.4s ease;}
+  .port-item:hover{border-color:var(--orange);transform:translateY(-3px);box-shadow:0 8px 28px rgba(255,107,0,0.13);}
+  .port-thumb{height:130px;display:flex;align-items:center;justify-content:center;font-size:42px;}
+  .t-ig{background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);}
+  .t-li{background:linear-gradient(135deg,#0077B5,#00A0DC);}
+  .t-both{background:linear-gradient(135deg,#f09433,#bc1888,#0077B5);}
+  .port-info{padding:13px;}
+  .port-title{font-weight:700;font-size:13px;color:#fff;margin-bottom:3px;}
+  .port-meta{font-size:10px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;}
+  .port-eng{font-size:11px;color:var(--orange);margin-top:6px;font-weight:600;}
+
+  .chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 170px);}
+  .chat-msgs{flex:1;overflow-y:auto;padding:4px 0;display:flex;flex-direction:column;gap:12px;}
+  .chat-msgs::-webkit-scrollbar{width:3px;}
+  .chat-msgs::-webkit-scrollbar-thumb{background:var(--border);}
+  .msg{display:flex;gap:9px;animation:fadeUp 0.3s ease;}
+  .msg.user{flex-direction:row-reverse;}
+  .msg-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+  .msg.ai .msg-av{background:var(--orange-dim);border:1px solid var(--border);}
+  .msg.user .msg-av{background:var(--surface3);border:1px solid var(--border);}
+  .msg-bubble{max-width:76%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.65;}
+  .msg.ai .msg-bubble{background:var(--surface2);border:1px solid var(--border);border-top-left-radius:2px;}
+  .msg.user .msg-bubble{background:var(--orange-dim);border:1px solid var(--border);border-top-right-radius:2px;}
+  .chat-bar{display:flex;gap:9px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+  .chat-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 15px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s;}
+  .chat-input:focus{border-color:var(--orange);}
+
+  .typing{display:flex;gap:4px;padding:4px 0;}
+  .typing span{width:7px;height:7px;background:var(--orange);border-radius:50%;animation:bounce 1.2s infinite;}
+  .typing span:nth-child(2){animation-delay:.2s;}
+  .typing span:nth-child(3){animation-delay:.4s;}
+  @keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-8px)}}
+  .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,0,0,0.3);border-top-color:#000;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .empty{text-align:center;padding:40px 20px;color:var(--text-muted);}
+  .empty-icon{font-size:42px;margin-bottom:12px;opacity:0.5;}
+  .empty-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--text);margin-bottom:6px;}
+  .empty-desc{font-size:12px;line-height:1.6;}
+
+  .chart-bars{display:flex;align-items:flex-end;gap:7px;height:100px;padding:0 2px;}
+  .bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end;}
+  .bar{width:100%;background:var(--orange-dim);border:1px solid var(--border);border-radius:4px 4px 0 0;position:relative;overflow:hidden;}
+  .bar::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,var(--orange) 0%,transparent 100%);opacity:0.3;}
+
+  .toast{position:fixed;bottom:22px;right:22px;background:var(--orange);color:#000;padding:9px 18px;border-radius:8px;font-weight:700;font-size:12px;letter-spacing:1px;z-index:999;transform:translateY(60px);opacity:0;transition:all 0.3s;}
+  .toast.show{transform:translateY(0);opacity:1;}
+  .err-box{color:#ff6b6b;font-size:12px;padding:12px;font-family:'JetBrains Mono',monospace;background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.2);border-radius:8px;}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo-area">
+      <div class="brand">SKY <span>WEB</span></div>
+      <div class="tagline">DXB · AI AGENT</div>
+      <div class="live-badge">LIVE</div>
+    </div>
+    <nav>
+      <div class="nav-label">Main</div>
+      <div class="nav-item active" data-tab="dashboard" onclick="go('dashboard',this)"><span class="nav-icon">📊</span><span>Dashboard</span></div>
+      <div class="nav-item" data-tab="generate" onclick="go('generate',this)"><span class="nav-icon">✨</span><span>AI Generate</span></div>
+      <div class="nav-item" data-tab="schedule" onclick="go('schedule',this)"><span class="nav-icon">🗓️</span><span>Schedule</span></div>
+      <div class="nav-label">Portfolio</div>
+      <div class="nav-item" data-tab="portfolio" onclick="go('portfolio',this)"><span class="nav-icon">🏆</span><span>My Work</span></div>
+      <div class="nav-label">AI Chat</div>
+      <div class="nav-item" data-tab="chat" onclick="go('chat',this)"><span class="nav-icon">🤖</span><span>Agent Chat</span></div>
+    </nav>
+    <div class="api-section">
+      <span class="api-label">Anthropic API Key</span>
+      <div class="api-row">
+        <input class="api-input" type="password" id="apiKey" placeholder="sk-ant-..." />
+        <button class="api-save" onclick="saveKey()">✓</button>
+      </div>
+      <div class="api-status" id="apiStatus"></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="page-title" id="pageTitle">DASHBOARD</div>
+      <div class="topbar-pills">
+        <div class="pill pill-ig">📷 INSTAGRAM</div>
+        <div class="pill pill-li">💼 LINKEDIN</div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="content active" id="tab-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-val" id="s-drafts">0</div><div class="stat-lbl">Posts Drafted</div><div class="stat-chg">↑ This session</div></div>
+        <div class="stat-card"><div class="stat-val" id="s-sched">0</div><div class="stat-lbl">Scheduled</div><div class="stat-chg">↑ In queue</div></div>
+        <div class="stat-card"><div class="stat-val" id="s-port">6</div><div class="stat-lbl">Portfolio Items</div><div class="stat-chg">↑ Client work</div></div>
+        <div class="stat-card"><div class="stat-val">2</div><div class="stat-lbl">Platforms</div><div class="stat-chg">IG + LinkedIn</div></div>
+      </div>
+      <div class="sec-title">QUICK DRAFT</div>
+      <div class="card">
+        <div style="display:flex;gap:10px;">
+          <input class="form-control" id="quickTopic" placeholder="Enter a topic or campaign idea..." style="flex:1" onkeydown="if(event.key==='Enter')quickGen()" />
+          <button class="btn btn-primary" onclick="quickGen()" id="quickBtn">⚡ DRAFT IT</button>
+        </div>
+        <div id="quickOut" style="margin-top:14px;"></div>
+      </div>
+      <div class="sec-title">CONTENT OUTPUT THIS WEEK</div>
+      <div class="card">
+        <div class="chart-bars" id="weekChart"></div>
+        <div style="display:flex;gap:7px;margin-top:6px;" id="weekLbls"></div>
+      </div>
+    </div>
+
+    <!-- GENERATE -->
+    <div class="content" id="tab-generate">
+      <div class="sec-title">AI POST GENERATOR</div>
+      <div class="two-col">
+        <div><div class="card">
+          <div class="card-header"><div class="card-title">POST DETAILS</div></div>
+          <div class="form-group"><div class="form-label">Platform</div><div class="ptoggle-row"><div class="ptoggle on-ig" id="pt-ig" onclick="setPlatform('ig')">📷 Instagram</div><div class="ptoggle" id="pt-li" onclick="setPlatform('li')">💼 LinkedIn</div><div class="ptoggle" id="pt-both" onclick="setPlatform('both')">🔀 Both</div></div></div>
+          <div class="form-group"><label class="form-label">Topic</label><input class="form-control" id="gTopic" placeholder="e.g. New website launch" /></div>
+          <div class="form-group"><label class="form-label">Tone</label><select class="form-control" id="gTone"><option value="casual">Casual & Friendly</option><option value="professional">Professional</option><option value="exciting">Exciting & Bold</option><option value="inspirational">Inspirational</option></select></div>
+          <div class="form-group"><label class="form-label">Key Points (optional)</label><textarea class="form-control" id="gPoints" placeholder="Specific details, CTAs..."></textarea></div>
+          <div class="form-group"><label class="form-label">Variations</label><select class="form-control" id="gCount"><option value="1">1 post</option><option value="2" selected>2 variations</option><option value="3">3 variations</option></select></div>
+          <button class="btn btn-primary" onclick="genPosts()" id="genBtn" style="width:100%">✨ GENERATE WITH AI</button>
+        </div></div>
+        <div><div class="card" style="min-height:300px;">
+          <div class="card-header"><div class="card-title">OUTPUT</div></div>
+          <div id="genOut"><div class="empty"><div class="empty-icon">✨</div><div class="empty-title">Ready</div><div class="empty-desc">Fill details and generate.</div></div></div>
+        </div></div>
+      </div>
+    </div>
+
+    <!-- SCHEDULE -->
+    <div class="content" id="tab-schedule">
+      <div class="sec-title">CONTENT SCHEDULER</div>
+      <div class="two-col">
+        <div><div class="card">
+          <div class="card-header"><div class="card-title">ADD TO QUEUE</div></div>
+          <div class="form-group"><label class="form-label">Post Content</label><textarea class="form-control" id="scContent" style="min-height:110px" placeholder="Paste your post here..."></textarea></div>
+          <div class="form-group"><label class="form-label">Platform</label><select class="form-control" id="scPlatform"><option value="instagram">📷 Instagram</option><option value="linkedin">💼 LinkedIn</option><option value="both">🔀 Both</option></select></div>
+          <div class="form-group"><label class="form-label">Date & Time</label><input class="form-control" type="datetime-local" id="scDT" /></div>
+          <div class="form-group"><label class="form-label">Campaign Tag</label><input class="form-control" id="scTag" placeholder="e.g. Brand Awareness" /></div>
+          <button class="btn btn-primary" onclick="addSched()" style="width:100%">📅 SCHEDULE POST</button>
+        </div></div>
+        <div><div class="card">
+          <div class="card-header"><div class="card-title">UPCOMING QUEUE</div><div id="qCount" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted)">0 posts</div></div>
+          <div id="schedList"><div class="empty" style="padding:28px 20px;"><div class="empty-icon">🗓️</div><div class="empty-title">Queue Empty</div></div></div>
+        </div></div>
+      </div>
+    </div>
+
+    <!-- PORTFOLIO -->
+    <div class="content" id="tab-portfolio">
+      <div class="sec-title">MY WORK PORTFOLIO</div>
+      <div class="stats-grid" style="margin-bottom:20px">
+        <div class="stat-card"><div class="stat-val">24</div><div class="stat-lbl">Total Posts</div><div class="stat-chg">↑ All time</div></div>
+        <div class="stat-card"><div class="stat-val">12K</div><div class="stat-lbl">Total Reach</div><div class="stat-chg">↑ 18%</div></div>
+        <div class="stat-card"><div class="stat-val">8</div><div class="stat-lbl">Clients</div><div class="stat-chg">↑ Active</div></div>
+        <div class="stat-card"><div class="stat-val">94%</div><div class="stat-lbl">Approval Rate</div><div class="stat-chg">↑ Satisfaction</div></div>
+      </div>
+      <div class="port-grid" id="portGrid"></div>
+      <div style="margin-top:22px"><div class="sec-title">ADD WORK</div></div>
+      <div class="card"><div class="two-col">
+        <div>
+          <div class="form-group"><label class="form-label">Project Title</label><input class="form-control" id="pTitle" placeholder="e.g. Brand Identity Launch" /></div>
+          <div class="form-group"><label class="form-label">Client</label><input class="form-control" id="pClient" placeholder="e.g. TechCorp Dubai" /></div>
+          <div class="form-group"><label class="form-label">Platform</label><select class="form-control" id="pPlat"><option value="ig">📷 Instagram</option><option value="li">💼 LinkedIn</option><option value="both">🔀 Both</option></select></div>
+        </div>
+        <div>
+          <div class="form-group"><label class="form-label">Description</label><textarea class="form-control" id="pDesc" style="min-height:90px" placeholder="Describe the work and results..."></textarea></div>
+          <div class="form-group"><label class="form-label">Engagement</label><input class="form-control" id="pEng" placeholder="e.g. 1.2K likes" /></div>
+          <button class="btn btn-primary" onclick="addPort()" style="width:100%">+ ADD TO PORTFOLIO</button>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- CHAT -->
+    <div class="content" id="tab-chat">
+      <div class="sec-title">AI AGENT CHAT</div>
+      <div class="card chat-wrap">
+        <div class="chat-msgs" id="chatMsgs">
+          <div class="msg ai"><div class="msg-av">🤖</div><div class="msg-bubble">Hey! I'm your Sky Web DXB Social Media AI Agent 🐦<br><br>I can help with Instagram &amp; LinkedIn posts, content strategy, hashtags, and portfolio advice.<br><br>Enter your API key in the sidebar to get started! 🚀</div></div>
+        </div>
+        <div class="chat-bar">
+          <input class="chat-input" id="chatIn" placeholder="Ask about content strategy, post ideas..." onkeydown="if(event.key==='Enter'&&!event.shiftKey)sendChat()" />
+          <button class="btn btn-primary" onclick="sendChat()" id="chatBtn">SEND →</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+let apiKey='', activePlatform='ig', scheduledPosts=[], portfolioItems=[], draftCount=0, chatHistory=[];
+
+const SYSTEM=`You are the AI Social Media Agent for Sky Web DXB, a creative digital agency in Dubai, UAE. Brand voice: bold, creative, professional. When generating posts return ONLY raw JSON array: [{"platform":"Instagram","caption":"...","hashtags":"#tag","cta":"..."}]`;
+
+// Key difference: calls /api/claude on local server instead of api.anthropic.com directly
+async function callClaude(messages) {
+  if (!apiKey) { toast('Add your API key! 🔑'); return null; }
+  const res = await fetch('/api/claude', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ apiKey, model:'claude-sonnet-4-6', max_tokens:1500, system:SYSTEM, messages })
+  });
+  if (!res.ok) { const e = await res.text(); throw new Error(e.slice(0,200)); }
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.content?.[0]?.text || '';
+}
+
+function saveKey() {
+  const v = document.getElementById('apiKey').value.trim();
+  if (!v.startsWith('sk-ant-')) { setStatus('err','✗ Invalid key format'); return; }
+  apiKey=v; setStatus('ok','✓ CONNECTED'); toast('API key saved! ✓');
+}
+function setStatus(t,m) { const el=document.getElementById('apiStatus'); el.className=`api-status ${t}`; el.textContent=m; }
+
+const TITLES={dashboard:'DASHBOARD',generate:'AI GENERATE',schedule:'SCHEDULE',portfolio:'MY WORK',chat:'AGENT CHAT'};
+function go(tab,el) {
+  document.querySelectorAll('.content').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  el.classList.add('active');
+  document.getElementById('pageTitle').textContent=TITLES[tab];
+}
+function setPlatform(p) {
+  activePlatform=p;
+  document.getElementById('pt-ig').className='ptoggle'+(p==='ig'?' on-ig':'');
+  document.getElementById('pt-li').className='ptoggle'+(p==='li'?' on-li':'');
+  document.getElementById('pt-both').className='ptoggle'+(p==='both'?' on-both':'');
+}
+async function quickGen() {
+  const topic=document.getElementById('quickTopic').value.trim(); if(!topic){toast('Enter a topic!');return;}
+  const btn=document.getElementById('quickBtn'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
+  const out=document.getElementById('quickOut'); out.innerHTML=typingHTML();
+  try {
+    const reply=await callClaude([{role:'user',content:`Write a punchy Instagram post for Sky Web DXB (Dubai digital agency) about: "${topic}". Include 5 hashtags. Under 150 words.`}]);
+    if(!reply){out.innerHTML='';return;}
+    draftCount++; document.getElementById('s-drafts').textContent=draftCount;
+    out.innerHTML=`<div class="post-card"><div class="pbadge pbadge-ig">📷 Instagram Draft</div><div class="post-text">${esc(reply)}</div><div class="post-actions"><button class="btn btn-primary btn-sm" onclick="copy(${JSON.stringify(reply)})">📋 COPY</button><button class="btn btn-ghost btn-sm" onclick="toSched(${JSON.stringify(reply)},'instagram')">📅 SCHEDULE</button></div></div>`;
+    toast('Draft ready! ✨');
+  } catch(e){out.innerHTML=`<div class="err-box">Error: ${esc(e.message)}</div>`;}
+  btn.disabled=false; btn.innerHTML='⚡ DRAFT IT'; document.getElementById('quickTopic').value='';
+}
+async function genPosts() {
+  const topic=document.getElementById('gTopic').value.trim(); if(!topic){toast('Enter a topic!');return;}
+  const tone=document.getElementById('gTone').value, points=document.getElementById('gPoints').value.trim(), count=document.getElementById('gCount').value;
+  const platLabel=activePlatform==='both'?'both Instagram and LinkedIn':activePlatform==='ig'?'Instagram':'LinkedIn';
+  const btn=document.getElementById('genBtn'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span> GENERATING...';
+  const out=document.getElementById('genOut'); out.innerHTML=typingHTML();
+  try {
+    const text=await callClaude([{role:'user',content:`Generate ${count} post(s) for ${platLabel}. Topic: ${topic}. Tone: ${tone}. ${points?'Key points: '+points:''} Return ONLY raw JSON array: [{"platform":"Instagram","caption":"...","hashtags":"#tag1","cta":"..."}]`}]);
+    if(!text){out.innerHTML='';return;}
+    let posts; try{posts=JSON.parse(text.replace(/```json|```/g,'').trim());if(!Array.isArray(posts))throw 0;}catch{posts=[{platform:platLabel,caption:text,hashtags:'#SkyWebDXB #Dubai',cta:''}];}
+    draftCount+=posts.length; document.getElementById('s-drafts').textContent=draftCount; window._posts=posts;
+    out.innerHTML=posts.map((p,i)=>{const isIG=(p.platform||'').toLowerCase().includes('insta')||activePlatform==='ig'; return `<div class="post-card"><div class="pbadge ${isIG?'pbadge-ig':'pbadge-li'}">${isIG?'📷':'💼'} ${esc(p.platform||platLabel)}</div><div class="post-text">${esc(p.caption||'')}</div>${p.hashtags?`<div class="post-tags">${esc(p.hashtags)}</div>`:''}${p.cta?`<div class="post-cta">👉 ${esc(p.cta)}</div>`:''}<div class="post-actions"><button class="btn btn-primary btn-sm" onclick="copy(${JSON.stringify((p.caption||'')+'\n\n'+(p.hashtags||''))})">📋 COPY</button><button class="btn btn-ghost btn-sm" onclick="toSched(${JSON.stringify(p.caption||'')},${JSON.stringify(isIG?'instagram':'linkedin')})">📅 SCHEDULE</button><button class="btn btn-ghost btn-sm" onclick="savePort(${i})">🏆 SAVE</button></div></div>`;}).join('');
+    toast(`${posts.length} post(s) generated! ✨`);
+  } catch(e){out.innerHTML=`<div class="err-box">Error: ${esc(e.message)}</div>`;}
+  btn.disabled=false; btn.innerHTML='✨ GENERATE WITH AI';
+}
+function savePort(i){const p=(window._posts||[])[i];if(!p)return;addPortItem({title:'AI Generated Post',client:'Sky Web DXB',plat:(p.platform||'').toLowerCase().includes('insta')?'ig':'li',desc:(p.caption||'').slice(0,120),eng:'Draft'});toast('Saved! 🏆');}
+function initDT(){const el=document.getElementById('scDT');if(!el)return;const d=new Date();d.setHours(d.getHours()+1,0,0,0);el.value=d.toISOString().slice(0,16);}
+function toSched(content,platform){document.getElementById('scContent').value=content;document.getElementById('scPlatform').value=platform;go('schedule',document.querySelector('[data-tab="schedule"]'));toast('Sent to scheduler!');}
+function addSched(){const content=document.getElementById('scContent').value.trim(),platform=document.getElementById('scPlatform').value,dt=document.getElementById('scDT').value,tag=document.getElementById('scTag').value.trim();if(!content){toast('Enter content!');return;}if(!dt){toast('Pick a time!');return;}scheduledPosts.push({content,platform,dt,tag,id:Date.now()});scheduledPosts.sort((a,b)=>new Date(a.dt)-new Date(b.dt));document.getElementById('s-sched').textContent=scheduledPosts.length;document.getElementById('qCount').textContent=scheduledPosts.length+' posts';renderSched();document.getElementById('scContent').value='';document.getElementById('scTag').value='';toast('Scheduled! 📅');}
+function renderSched(){const el=document.getElementById('schedList');if(!scheduledPosts.length){el.innerHTML=`<div class="empty" style="padding:26px 20px;"><div class="empty-icon">🗓️</div><div class="empty-title">Queue Empty</div></div>`;return;}const icons={instagram:'📷',linkedin:'💼',both:'🔀'};el.innerHTML=scheduledPosts.map(p=>{const d=new Date(p.dt),t=d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});return `<div class="sched-item"><div class="sched-time">${t}</div><div class="sched-body"><div class="sched-text">${esc(p.content.slice(0,100))}${p.content.length>100?'...':''}</div><div class="sched-meta"><span class="pbadge ${p.platform==='instagram'?'pbadge-ig':'pbadge-li'}" style="margin:0;padding:2px 8px;font-size:9px;">${icons[p.platform]||'🔀'} ${p.platform}</span><span class="status-badge s-sched">SCHEDULED</span>${p.tag?`<span style="font-size:10px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;">${esc(p.tag)}</span>`:''}<button class="btn btn-ghost btn-sm" style="padding:2px 8px;font-size:10px;margin-left:auto;" onclick="removeSched(${p.id})">✕</button></div></div></div>`;}).join('');}
+function removeSched(id){scheduledPosts=scheduledPosts.filter(p=>p.id!==id);document.getElementById('s-sched').textContent=scheduledPosts.length;document.getElementById('qCount').textContent=scheduledPosts.length+' posts';renderSched();}
+const defaultPort=[{title:'Brand Identity Launch',client:'TechCorp Dubai',plat:'both',desc:'Full social rollout.',eng:'2.4K likes • 180 shares',date:'Mar 2026'},{title:'Ramadan Campaign',client:'Retail Client UAE',plat:'ig',desc:'30-post visual series.',eng:'8.1K reach • 94% positive',date:'Feb 2026'},{title:'Thought Leadership',client:'Finance Group',plat:'li',desc:'Weekly LinkedIn articles.',eng:'12K impressions • 340 comments',date:'Jan 2026'},{title:'Restaurant Launch',client:'F&B Brand Dubai',plat:'ig',desc:'Instagram-first campaign.',eng:'5.2K likes • 220 saves',date:'Dec 2025'},{title:'Year-End Recap',client:'Sky Web DXB',plat:'both',desc:'Annual brand showcase.',eng:'3.8K reach • Top performing',date:'Dec 2025'},{title:'GITEX Coverage',client:'GITEX Tech Week',plat:'li',desc:'Live event coverage.',eng:'15K impressions',date:'Oct 2025'}];
+function addPortItem(item){item.date=new Date().toLocaleDateString('en-GB',{month:'short',year:'numeric'});portfolioItems.unshift(item);document.getElementById('s-port').textContent=portfolioItems.length;renderPort();}
+function addPort(){const title=document.getElementById('pTitle').value.trim(),client=document.getElementById('pClient').value.trim();if(!title||!client){toast('Enter title and client!');return;}addPortItem({title,client,plat:document.getElementById('pPlat').value,desc:document.getElementById('pDesc').value.trim(),eng:document.getElementById('pEng').value.trim()});['pTitle','pClient','pDesc','pEng'].forEach(id=>document.getElementById(id).value='');toast('Added! 🏆');}
+function renderPort(){const grid=document.getElementById('portGrid'),tc={ig:'t-ig',li:'t-li',both:'t-both'},ti={ig:'📷',li:'💼',both:'🔀'};grid.innerHTML=portfolioItems.map(item=>`<div class="port-item"><div class="port-thumb ${tc[item.plat]||'t-both'}">${ti[item.plat]||'🔀'}</div><div class="port-info"><div class="port-title">${esc(item.title)}</div><div class="port-meta">${esc(item.client)} · ${item.date||'Recent'}</div><div class="port-eng">${esc(item.eng||'—')}</div></div></div>`).join('');}
+async function sendChat(){const input=document.getElementById('chatIn'),msg=input.value.trim();if(!msg)return;input.value='';appendMsg('user',msg);chatHistory.push({role:'user',content:msg});const btn=document.getElementById('chatBtn');btn.disabled=true;btn.textContent='...';const tid=appendTyping();try{const reply=await callClaude(chatHistory);if(reply){chatHistory.push({role:'assistant',content:reply});removeTyping(tid);appendMsg('ai',reply);}else removeTyping(tid);}catch(e){removeTyping(tid);appendMsg('ai','Error: '+e.message);}btn.disabled=false;btn.textContent='SEND →';}
+function appendMsg(role,text){const c=document.getElementById('chatMsgs'),d=document.createElement('div');d.className=`msg ${role}`;d.innerHTML=`<div class="msg-av">${role==='ai'?'🤖':'👤'}</div><div class="msg-bubble">${esc(text).replace(/\n/g,'<br>')}</div>`;c.appendChild(d);c.scrollTop=c.scrollHeight;}
+function appendTyping(){const c=document.getElementById('chatMsgs'),id='typ-'+Date.now(),d=document.createElement('div');d.className='msg ai';d.id=id;d.innerHTML=`<div class="msg-av">🤖</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;c.appendChild(d);c.scrollTop=c.scrollHeight;return id;}
+function removeTyping(id){document.getElementById(id)?.remove();}
+function typingHTML(){return `<div style="display:flex;gap:9px;padding:16px;align-items:center"><div style="width:30px;height:30px;border-radius:50%;background:var(--orange-dim);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;">🤖</div><div class="typing"><span></span><span></span><span></span></div></div>`;}
+function buildChart(){const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],vals=[3,5,2,7,4,6,3],max=Math.max(...vals);document.getElementById('weekChart').innerHTML=vals.map(v=>`<div class="bar-wrap"><div class="bar" style="height:${Math.round((v/max)*90)}px;width:100%;"></div></div>`).join('');document.getElementById('weekLbls').innerHTML=days.map(d=>`<div style="flex:1;text-align:center;font-size:9px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;">${d}</div>`).join('');}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function copy(t){navigator.clipboard.writeText(t).then(()=>toast('Copied! 📋'));}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+portfolioItems=[...defaultPort]; renderPort(); buildChart(); initDT();
+</script>
+</body>
+</html>
